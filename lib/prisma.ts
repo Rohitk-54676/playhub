@@ -5,11 +5,16 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+const connectionString = process.env.DIRECT_URL!;
+const parsed = new URL(connectionString);
+
 const adapter = new PrismaPg({
-  connectionString: process.env.DIRECT_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  host: parsed.hostname,
+  port: parseInt(parsed.port),
+  user: parsed.username,
+  password: parsed.password,
+  database: parsed.pathname.slice(1),
+  ssl: { rejectUnauthorized: false },
 });
 
 export const prisma =
