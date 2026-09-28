@@ -1,13 +1,16 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { Loader2, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Loader2, Users, MessageCircle } from "lucide-react";
 import { fetchProfileByUsername } from "@/lib/social/profile";
 import type { Profile } from "@/lib/types";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/social/UserAvatar";
 import { FriendButton } from "@/components/social/FriendButton";
 import { useUser } from "@/hooks/useUser";
+import { toast } from "sonner";
 
 export default function ProfilePage({
   params,
@@ -15,9 +18,11 @@ export default function ProfilePage({
   params: Promise<{ username: string }>;
 }) {
   const { username } = use(params);
+  const router = useRouter();
   const { user } = useUser();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [opening, setOpening] = useState(false);
 
   useEffect(() => {
     fetchProfileByUsername(username).then((p) => {
@@ -25,6 +30,29 @@ export default function ProfilePage({
       setLoading(false);
     });
   }, [username]);
+
+  async function openChat() {
+    if (!profile) return;
+    setOpening(true);
+    try {
+      const res = await fetch("/api/dm/open", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetId: profile.id }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.error ?? "Failed to open chat");
+        setOpening(false);
+        return;
+      }
+      const data = await res.json();
+      router.push(`/messages/${data.id}`);
+    } catch {
+      toast.error("Network error");
+      setOpening(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -71,6 +99,14 @@ export default function ProfilePage({
 
           {!isMe && (
             <div className="flex gap-2">
+              <Button variant="outline" onClick={openChat} disabled={opening}>
+                {opening ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : (
+                  <MessageCircle className="mr-1.5 h-4 w-4" />
+                )}
+                Message
+              </Button>
               <FriendButton targetId={profile.id} />
             </div>
           )}

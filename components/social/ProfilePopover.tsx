@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { MessageCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { MessageCircle, Loader2 } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -10,6 +12,7 @@ import {
 import { UserAvatar } from "./UserAvatar";
 import { FriendButton } from "./FriendButton";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface Props {
   userId: string;
@@ -26,7 +29,31 @@ export function ProfilePopover({
   avatarUrl,
   size = "md",
 }: Props) {
+  const router = useRouter();
+  const [opening, setOpening] = useState(false);
   const name = displayName ?? username;
+
+  async function openChat() {
+    setOpening(true);
+    try {
+      const res = await fetch("/api/dm/open", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetId: userId }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.error ?? "Failed to open chat");
+        setOpening(false);
+        return;
+      }
+      const data = await res.json();
+      router.push(`/messages/${data.id}`);
+    } catch {
+      toast.error("Network error");
+      setOpening(false);
+    }
+  }
 
   return (
     <Popover>
@@ -70,10 +97,14 @@ export function ProfilePopover({
             <Button
               size="sm"
               variant="outline"
-              disabled
-              title="Messaging coming in Module 4"
+              onClick={openChat}
+              disabled={opening}
             >
-              <MessageCircle className="h-4 w-4" />
+              {opening ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <MessageCircle className="h-4 w-4" />
+              )}
             </Button>
           </div>
 

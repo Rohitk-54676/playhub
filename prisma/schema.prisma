@@ -17,12 +17,14 @@ model Profile {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  sentRequests      Friendship[] @relation("RequesterFriendships")
-  receivedRequests  Friendship[] @relation("AddresseeFriendships")
-  blocksInitiated   Block[]      @relation("BlockerBlocks")
-  blocksReceived    Block[]      @relation("BlockedBlocks")
-  notifications     Notification[] @relation("UserNotifications")
-  notificationsSent Notification[] @relation("ActorNotifications")
+  sentRequests      Friendship[]     @relation("RequesterFriendships")
+  receivedRequests  Friendship[]     @relation("AddresseeFriendships")
+  blocksInitiated   Block[]          @relation("BlockerBlocks")
+  blocksReceived    Block[]          @relation("BlockedBlocks")
+  notifications     Notification[]   @relation("UserNotifications")
+  notificationsSent Notification[]   @relation("ActorNotifications")
+  conversationMembers ConversationMember[]
+  messagesSent      Message[]
 
   @@map("profiles")
 }
@@ -31,7 +33,7 @@ model Friendship {
   id          String   @id @default(uuid()) @db.Uuid
   requesterId String   @map("requester_id") @db.Uuid
   addresseeId String   @map("addressee_id") @db.Uuid
-  status      String   @default("pending") // pending | accepted
+  status      String   @default("pending")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -62,7 +64,7 @@ model Notification {
   id        String   @id @default(uuid()) @db.Uuid
   userId    String   @map("user_id") @db.Uuid
   actorId   String?  @map("actor_id") @db.Uuid
-  type      String   // friend_request | friend_accepted
+  type      String
   data      Json?
   read      Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")
@@ -72,4 +74,47 @@ model Notification {
 
   @@index([userId, read])
   @@map("notifications")
+}
+
+model Conversation {
+  id        String   @id @default(uuid()) @db.Uuid
+  type      String   @default("direct") // direct | group | game
+  name      String?  // for group chats
+  createdBy String?  @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  members  ConversationMember[]
+  messages Message[]
+
+  @@index([updatedAt])
+  @@map("conversations")
+}
+
+model ConversationMember {
+  conversationId String   @map("conversation_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  joinedAt       DateTime @default(now()) @map("joined_at")
+  lastReadAt     DateTime @default(now()) @map("last_read_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         Profile      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, userId])
+  @@index([userId])
+  @@map("conversation_members")
+}
+
+model Message {
+  id             String   @id @default(uuid()) @db.Uuid
+  conversationId String   @map("conversation_id") @db.Uuid
+  senderId       String   @map("sender_id") @db.Uuid
+  body           String
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       Profile      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
 }
