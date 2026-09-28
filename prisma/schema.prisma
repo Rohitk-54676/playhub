@@ -17,5 +17,59 @@ model Profile {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  sentRequests      Friendship[] @relation("RequesterFriendships")
+  receivedRequests  Friendship[] @relation("AddresseeFriendships")
+  blocksInitiated   Block[]      @relation("BlockerBlocks")
+  blocksReceived    Block[]      @relation("BlockedBlocks")
+  notifications     Notification[] @relation("UserNotifications")
+  notificationsSent Notification[] @relation("ActorNotifications")
+
   @@map("profiles")
+}
+
+model Friendship {
+  id          String   @id @default(uuid()) @db.Uuid
+  requesterId String   @map("requester_id") @db.Uuid
+  addresseeId String   @map("addressee_id") @db.Uuid
+  status      String   @default("pending") // pending | accepted
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  requester Profile @relation("RequesterFriendships", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee Profile @relation("AddresseeFriendships", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId, status])
+  @@index([requesterId, status])
+  @@map("friendships")
+}
+
+model Block {
+  id        String   @id @default(uuid()) @db.Uuid
+  blockerId String   @map("blocker_id") @db.Uuid
+  blockedId String   @map("blocked_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  blocker Profile @relation("BlockerBlocks", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked Profile @relation("BlockedBlocks", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+  @@map("blocks")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  actorId   String?  @map("actor_id") @db.Uuid
+  type      String   // friend_request | friend_accepted
+  data      Json?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  Profile  @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  actor Profile? @relation("ActorNotifications", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([userId, read])
+  @@map("notifications")
 }
