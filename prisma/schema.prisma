@@ -17,14 +17,16 @@ model Profile {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  sentRequests      Friendship[]     @relation("RequesterFriendships")
-  receivedRequests  Friendship[]     @relation("AddresseeFriendships")
-  blocksInitiated   Block[]          @relation("BlockerBlocks")
-  blocksReceived    Block[]          @relation("BlockedBlocks")
-  notifications     Notification[]   @relation("UserNotifications")
-  notificationsSent Notification[]   @relation("ActorNotifications")
+  sentRequests        Friendship[]        @relation("RequesterFriendships")
+  receivedRequests    Friendship[]        @relation("AddresseeFriendships")
+  blocksInitiated     Block[]             @relation("BlockerBlocks")
+  blocksReceived      Block[]             @relation("BlockedBlocks")
+  notifications       Notification[]      @relation("UserNotifications")
+  notificationsSent   Notification[]      @relation("ActorNotifications")
   conversationMembers ConversationMember[]
-  messagesSent      Message[]
+  messagesSent        Message[]
+  roomsHosted         Room[]              @relation("RoomHost")
+  roomPlayers         RoomPlayer[]
 
   @@map("profiles")
 }
@@ -78,8 +80,8 @@ model Notification {
 
 model Conversation {
   id        String   @id @default(uuid()) @db.Uuid
-  type      String   @default("direct") // direct | group | game
-  name      String?  // for group chats
+  type      String   @default("direct")
+  name      String?
   createdBy String?  @map("created_by") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -117,4 +119,36 @@ model Message {
 
   @@index([conversationId, createdAt])
   @@map("messages")
+}
+
+model Room {
+  id        String   @id @default(uuid()) @db.Uuid
+  code      String   @unique
+  gameId    String   @map("game_id")
+  hostId    String   @map("host_id") @db.Uuid
+  status    String   @default("lobby") // lobby | playing | finished
+  state     Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  host    Profile      @relation("RoomHost", fields: [hostId], references: [id], onDelete: Cascade)
+  players RoomPlayer[]
+
+  @@index([code])
+  @@index([updatedAt])
+  @@map("rooms")
+}
+
+model RoomPlayer {
+  roomId   String   @map("room_id") @db.Uuid
+  userId   String   @map("user_id") @db.Uuid
+  isHost   Boolean  @default(false) @map("is_host")
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  room Room    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([roomId, userId])
+  @@index([userId])
+  @@map("room_players")
 }

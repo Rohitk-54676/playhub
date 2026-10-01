@@ -1,7 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { Gamepad2, Sparkles } from "lucide-react";
+import { Users, Clock, Sparkles } from "lucide-react";
+import { GAMES } from "@/lib/games";
+import { cn } from "@/lib/utils";
 
 export default function HomePage() {
   return (
@@ -14,7 +17,9 @@ export default function HomePage() {
       >
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-accent" />
-          <span className="text-sm font-medium text-accent">Welcome to PlayHub</span>
+          <span className="text-sm font-medium text-accent">
+            Welcome to PlayHub
+          </span>
         </div>
         <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
           Play with friends.
@@ -24,20 +29,61 @@ export default function HomePage() {
         </p>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-        className="rounded-2xl border bg-card p-8 text-center"
-      >
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-          <Gamepad2 className="h-7 w-7" />
-        </div>
-        <h2 className="text-lg font-semibold">Games coming soon</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Bingo is being built. Check back shortly.
-        </p>
-      </motion.div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {GAMES.map((game, i) => (
+          <motion.div
+            key={game.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.05 + i * 0.05 }}
+            whileHover={game.available ? { y: -4 } : {}}
+          >
+            <Link
+              href={game.available ? `/play/${game.id}` : "#"}
+              className={cn(
+                "flex flex-col gap-4 rounded-2xl border bg-card p-5 transition-shadow",
+                game.available
+                  ? "cursor-pointer hover:shadow-lg"
+                  : "cursor-not-allowed opacity-60"
+              )}
+            >
+              <div
+                className={cn(
+                  "flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br text-3xl",
+                  game.color
+                )}
+              >
+                {game.icon}
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-semibold">{game.name}</h2>
+                  {!game.available && (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                      Soon
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {game.description}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Users className="h-3.5 w-3.5" />
+                  {game.minPlayers}–{game.maxPlayers} players
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  {game.avgTime}
+                </span>
+              </div>
+            </Link>
+          </motion.div>
+        ))}
+      </div>
     </div>
   );
 }
