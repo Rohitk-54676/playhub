@@ -41,6 +41,7 @@ export async function GET() {
             avatar_url: n.actor.avatarUrl,
           }
         : null,
+      data: n.data,
       read: n.read,
       createdAt: n.createdAt.toISOString(),
     }));

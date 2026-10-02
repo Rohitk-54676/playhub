@@ -11,27 +11,42 @@ interface NavItemProps {
   label: string;
   icon: LucideIcon;
   variant: "mobile" | "desktop";
+  badge?: number;
 }
 
-export function NavItem({ href, label, icon: Icon, variant }: NavItemProps) {
+export function NavItem({
+  href,
+  label,
+  icon: Icon,
+  variant,
+  badge = 0,
+}: NavItemProps) {
   const pathname = usePathname();
-  const active = pathname === href || (href !== "/" && pathname.startsWith(href));
+  const active =
+    pathname === href || (href !== "/" && pathname.startsWith(href));
 
   if (variant === "mobile") {
     return (
       <Link
         href={href}
         className={cn(
-          "relative flex flex-1 flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors",
+          "relative flex flex-1 flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[10px] font-medium transition-colors",
           active ? "text-accent" : "text-muted-foreground"
         )}
       >
-        <Icon className="h-5 w-5" />
-        <span>{label}</span>
+        <div className="relative">
+          <Icon className="h-5 w-5" />
+          {badge > 0 && (
+            <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold text-accent-fg">
+              {badge > 9 ? "9+" : badge}
+            </span>
+          )}
+        </div>
+        <span className="text-[10px]">{label}</span>
         {active && (
           <motion.div
             layoutId="nav-active-mobile"
-            className="absolute -top-2 h-1 w-8 rounded-full bg-accent"
+            className="absolute -top-2 h-1 w-6 rounded-full bg-accent"
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
           />
         )}
@@ -50,7 +65,12 @@ export function NavItem({ href, label, icon: Icon, variant }: NavItemProps) {
       )}
     >
       <Icon className="h-5 w-5" />
-      <span>{label}</span>
+      <span className="flex-1">{label}</span>
+      {badge > 0 && (
+        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[10px] font-bold text-accent-fg">
+          {badge > 9 ? "9+" : badge}
+        </span>
+      )}
       {active && (
         <motion.div
           layoutId="nav-active-desktop"

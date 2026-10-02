@@ -1,7 +1,7 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Loader2,
@@ -18,13 +18,10 @@ import { Label } from "@/components/ui/label";
 import { getGame } from "@/lib/games";
 import { toast } from "sonner";
 
-export default function GamePlayPage({
-  params,
-}: {
-  params: Promise<{ gameId: string }>;
-}) {
-  const { gameId } = use(params);
+export default function GamePlayPage() {
   const router = useRouter();
+  const params = useParams<{ gameId: string }>();
+  const gameId = params.gameId;
   const game = getGame(gameId);
 
   const [creating, setCreating] = useState(false);
@@ -51,7 +48,7 @@ export default function GamePlayPage({
       const res = await fetch("/api/rooms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId: game!.id }),
+        body: JSON.stringify({ gameId: game.id }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -59,7 +56,7 @@ export default function GamePlayPage({
         setCreating(false);
         return;
       }
-      router.push(`/play/${game!.id}/room/${data.code}`);
+      router.push(`/play/${game.id}/room/${data.code}`);
     } catch {
       toast.error("Network error");
       setCreating(false);
@@ -73,7 +70,7 @@ export default function GamePlayPage({
       const res = await fetch("/api/rooms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId: game!.id, solo: true }),
+        body: JSON.stringify({ gameId: game.id, solo: true }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -81,7 +78,7 @@ export default function GamePlayPage({
         setSoloing(false);
         return;
       }
-      router.push(`/play/${game!.id}/room/${data.code}`);
+      router.push(`/play/${game.id}/room/${data.code}`);
     } catch {
       toast.error("Network error");
       setSoloing(false);
@@ -125,7 +122,6 @@ export default function GamePlayPage({
         </div>
       </motion.div>
 
-      {/* Play vs Computer — primary */}
       <motion.button
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}

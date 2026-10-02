@@ -1,6 +1,7 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 
@@ -17,12 +18,10 @@ interface ConversationInfo {
   }[];
 }
 
-export default function ConversationPage({
-  params,
-}: {
-  params: Promise<{ threadId: string }>;
-}) {
-  const { threadId } = use(params);
+export default function ConversationPage() {
+  const params = useParams<{ threadId: string }>();
+  const threadId = params.threadId;
+
   const [conversation, setConversation] = useState<ConversationInfo | null>(
     null
   );

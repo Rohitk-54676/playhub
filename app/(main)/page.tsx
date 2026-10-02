@@ -2,11 +2,18 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Users, Clock, Sparkles } from "lucide-react";
+import { Users, Clock, Sparkles, Bot } from "lucide-react";
 import { GAMES } from "@/lib/games";
+import { useProfile } from "@/hooks/useProfile";
 import { cn } from "@/lib/utils";
 
 export default function HomePage() {
+  const { profile } = useProfile();
+
+  const greeting = profile
+    ? `Hey, ${profile.display_name ?? profile.username} 👋`
+    : "Play with friends.";
+
   return (
     <div className="flex flex-col gap-8">
       <motion.div
@@ -22,10 +29,10 @@ export default function HomePage() {
           </span>
         </div>
         <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-          Play with friends.
+          {greeting}
         </h1>
         <p className="text-muted-foreground">
-          Create a room, invite friends, and play games together.
+          Pick a game, create a room, or play against the computer.
         </p>
       </motion.div>
 
@@ -41,7 +48,7 @@ export default function HomePage() {
             <Link
               href={game.available ? `/play/${game.id}` : "#"}
               className={cn(
-                "flex flex-col gap-4 rounded-2xl border bg-card p-5 transition-shadow",
+                "group flex flex-col gap-4 rounded-2xl border bg-card p-5 transition-shadow",
                 game.available
                   ? "cursor-pointer hover:shadow-lg"
                   : "cursor-not-allowed opacity-60"
@@ -73,12 +80,18 @@ export default function HomePage() {
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Users className="h-3.5 w-3.5" />
-                  {game.minPlayers}–{game.maxPlayers} players
+                  {game.minPlayers}–{game.maxPlayers}
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="h-3.5 w-3.5" />
                   {game.avgTime}
                 </span>
+                {game.available && (
+                  <span className="ml-auto flex items-center gap-1 text-accent opacity-0 transition-opacity group-hover:opacity-100">
+                    <Bot className="h-3.5 w-3.5" />
+                    Play →
+                  </span>
+                )}
               </div>
             </Link>
           </motion.div>

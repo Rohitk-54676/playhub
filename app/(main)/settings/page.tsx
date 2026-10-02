@@ -7,6 +7,7 @@ import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import { updateProfile } from "@/lib/social/profile";
+import { useSoundStore } from "@/stores/soundStore";
 import { AccentPicker } from "@/components/theme/AccentPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,11 @@ export default function SettingsPage() {
   const { profile, loading, user } = useProfile();
   const { theme, setTheme } = useTheme();
 
+  const musicEnabled = useSoundStore((s) => s.musicEnabled);
+  const effectsEnabled = useSoundStore((s) => s.effectsEnabled);
+  const setMusic = useSoundStore((s) => s.setMusic);
+  const setEffects = useSoundStore((s) => s.setEffects);
+
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -30,33 +36,32 @@ export default function SettingsPage() {
     }
   }, [profile]);
 
-async function handleSave() {
-  if (!user) return;
-  setSaving(true);
+  async function handleSave() {
+    if (!user) return;
+    setSaving(true);
 
-  const cleanUsername = username.toLowerCase().trim();
-  const cleanDisplayName = displayName.trim();
+    const cleanUsername = username.toLowerCase().trim();
+    const cleanDisplayName = displayName.trim();
 
-  const { error, profile: updated } = await updateProfile(user.id, {
-    username: cleanUsername,
-    display_name: cleanDisplayName,
-  });
+    const { error, profile: updated } = await updateProfile(user.id, {
+      username: cleanUsername,
+      display_name: cleanDisplayName,
+    });
 
-  setSaving(false);
+    setSaving(false);
 
-  if (error) {
-    toast.error(error);
-    return;
+    if (error) {
+      toast.error(error);
+      return;
+    }
+
+    if (updated) {
+      setUsername(updated.username);
+      setDisplayName(updated.display_name ?? "");
+    }
+
+    toast.success("Profile updated");
   }
-
-  // Update local state instantly so UI reflects changes
-  if (updated) {
-    setUsername(updated.username);
-    setDisplayName(updated.display_name ?? "");
-  }
-
-  toast.success("Profile updated");
-}
 
   async function handleLogout() {
     const supabase = createClient();
@@ -94,6 +99,7 @@ async function handleSave() {
         </p>
       </div>
 
+      {/* Profile */}
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-semibold">Profile</h2>
         <div className="flex flex-col gap-4 rounded-2xl border bg-card p-5">
@@ -123,6 +129,7 @@ async function handleSave() {
         </div>
       </section>
 
+      {/* Appearance */}
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-semibold">Appearance</h2>
         <div className="flex flex-col gap-5 rounded-2xl border bg-card p-5">
@@ -151,6 +158,49 @@ async function handleSave() {
         </div>
       </section>
 
+      {/* Sound */}
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-semibold">Sound</h2>
+        <div className="flex flex-col gap-5 rounded-2xl border bg-card p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium">Background music</p>
+              <p className="text-xs text-muted-foreground">
+                Ambient music that plays while browsing
+              </p>
+            </div>
+            <Button
+              variant={musicEnabled ? "default" : "outline"}
+              onClick={() => setMusic(!musicEnabled)}
+              size="sm"
+              className="min-w-16"
+            >
+              {musicEnabled ? "On" : "Off"}
+            </Button>
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium">Sound effects</p>
+              <p className="text-xs text-muted-foreground">
+                Picks, marks, wins, and notifications
+              </p>
+            </div>
+            <Button
+              variant={effectsEnabled ? "default" : "outline"}
+              onClick={() => setEffects(!effectsEnabled)}
+              size="sm"
+              className="min-w-16"
+            >
+              {effectsEnabled ? "On" : "Off"}
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Account */}
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-semibold">Account</h2>
         <div className="rounded-2xl border bg-card p-5">

@@ -1,7 +1,7 @@
 "use client";
 
-import { use, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useRoom } from "@/hooks/useRoom";
 import { RoomLobby } from "@/components/room/RoomLobby";
@@ -10,13 +10,12 @@ import { Button } from "@/components/ui/button";
 import { useUser } from "@/hooks/useUser";
 import { toast } from "sonner";
 
-export default function RoomPage({
-  params,
-}: {
-  params: Promise<{ gameId: string; code: string }>;
-}) {
-  const { gameId, code } = use(params);
+export default function RoomPage() {
   const router = useRouter();
+  const params = useParams<{ gameId: string; code: string }>();
+  const gameId = params.gameId;
+  const code = params.code;
+
   const { user } = useUser();
   const { room, loading, error, join, leave, start } = useRoom(code);
 
@@ -48,7 +47,6 @@ export default function RoomPage({
     );
   }
 
-  // Lobby state
   if (room.status === "lobby") {
     return (
       <RoomLobby
@@ -60,7 +58,6 @@ export default function RoomPage({
     );
   }
 
-  // Playing / finished state — show game
   return (
     <BingoGame
       roomId={room.id}

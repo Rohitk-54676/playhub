@@ -54,6 +54,17 @@ export default function FriendsPage() {
           <div className="flex h-32 items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
+        ) : friends.length === 0 ? (
+          <div className="rounded-2xl border border-dashed bg-card/50 p-12 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+              <Users className="h-7 w-7" />
+            </div>
+            <h3 className="text-lg font-semibold">No friends yet</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Search for someone by username above to send them a friend
+              request.
+            </p>
+          </div>
         ) : (
           <FriendList friends={friends} />
         )}

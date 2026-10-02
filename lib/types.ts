@@ -38,13 +38,19 @@ export interface Friend {
 
 export interface NotificationItem {
   id: string;
-  type: "friend_request" | "friend_accepted";
+  type: "friend_request" | "friend_accepted" | "room_invite";
   actor: {
     id: string;
     username: string;
     display_name: string | null;
     avatar_url: string | null;
   } | null;
+  data?: {
+    roomCode?: string;
+    roomId?: string;
+    gameId?: string;
+    invitedByName?: string;
+  };
   read: boolean;
   createdAt: string;
 }

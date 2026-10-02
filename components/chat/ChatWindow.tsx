@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { ArrowLeft, Users } from "lucide-react";
 import { useChat } from "@/hooks/useChat";
 import { useUser } from "@/hooks/useUser";
+import { useSound } from "@/hooks/useSound";
 import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
 import { TypingIndicator } from "./TypingIndicator";
@@ -29,6 +30,9 @@ interface Props {
 
 export function ChatWindow({ conversation }: Props) {
   const { user } = useUser();
+  const { play } = useSound();
+  const prevMessageCount = useRef(0);
+
   const {
     messages,
     loading,
@@ -64,6 +68,17 @@ export function ChatWindow({ conversation }: Props) {
       markRead(user.id);
     }
   }, [messages.length, user, markRead]);
+
+  // Play sound when a new message arrives from someone else
+  useEffect(() => {
+    if (messages.length > prevMessageCount.current) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg && lastMsg.sender.id !== user?.id) {
+        play("message");
+      }
+    }
+    prevMessageCount.current = messages.length;
+  }, [messages, user, play]);
 
   return (
     <div className="flex h-full flex-col">

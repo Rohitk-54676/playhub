@@ -1,7 +1,7 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { Loader2, Users, MessageCircle } from "lucide-react";
 import { fetchProfileByUsername } from "@/lib/social/profile";
 import type { Profile } from "@/lib/types";
@@ -12,12 +12,10 @@ import { FriendButton } from "@/components/social/FriendButton";
 import { useUser } from "@/hooks/useUser";
 import { toast } from "sonner";
 
-export default function ProfilePage({
-  params,
-}: {
-  params: Promise<{ username: string }>;
-}) {
-  const { username } = use(params);
+export default function ProfilePage() {
+  const params = useParams<{ username: string }>();
+  const username = params.username;
+
   const router = useRouter();
   const { user } = useUser();
   const [profile, setProfile] = useState<Profile | null>(null);
