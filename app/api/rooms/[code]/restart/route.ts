@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { startBingoGame } from "@/lib/bingo/engine";
 
-// POST /api/rooms/[code]/start — host-only, starts the game
+// POST /api/rooms/[code]/restart — host-only, resets the game
 export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ code: string }> }
@@ -24,34 +24,22 @@ export async function POST(
       where: { code: code.toUpperCase() },
       include: { players: true },
     });
-
     if (!room) {
       return NextResponse.json({ error: "Room not found" }, { status: 404 });
     }
-
     if (room.hostId !== user.id) {
-      return NextResponse.json(
-        { error: "Only the host can start" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Host only" }, { status: 403 });
     }
 
-    if (room.status !== "lobby") {
-      return NextResponse.json({ error: "Already started" }, { status: 409 });
-    }
-
-    if (room.players.length < 2) {
-      return NextResponse.json(
-        { error: "Need at least 2 players" },
-        { status: 400 }
-      );
-    }
+    // Wipe cards + picks, then start fresh
+    await prisma.bingoPick.deleteMany({ where: { roomId: room.id } });
+    await prisma.bingoCard.deleteMany({ where: { roomId: room.id } });
 
     await startBingoGame(room.id);
 
-    return NextResponse.json({ ok: true, status: "playing" });
+    return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error("POST start error:", e);
+    console.error("POST restart error:", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

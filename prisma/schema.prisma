@@ -27,6 +27,8 @@ model Profile {
   messagesSent        Message[]
   roomsHosted         Room[]              @relation("RoomHost")
   roomPlayers         RoomPlayer[]
+  bingoCards          BingoCard[]
+  bingoPicks          BingoPick[]
 
   @@map("profiles")
 }
@@ -126,8 +128,9 @@ model Room {
   code      String   @unique
   gameId    String   @map("game_id")
   hostId    String   @map("host_id") @db.Uuid
-  status    String   @default("lobby") // lobby | playing | finished
+  status    String   @default("lobby")
   state     Json?
+  isSolo    Boolean  @default(false) @map("is_solo")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -143,6 +146,7 @@ model RoomPlayer {
   roomId   String   @map("room_id") @db.Uuid
   userId   String   @map("user_id") @db.Uuid
   isHost   Boolean  @default(false) @map("is_host")
+  isBot    Boolean  @default(false) @map("is_bot")
   joinedAt DateTime @default(now()) @map("joined_at")
 
   room Room    @relation(fields: [roomId], references: [id], onDelete: Cascade)
@@ -151,4 +155,35 @@ model RoomPlayer {
   @@id([roomId, userId])
   @@index([userId])
   @@map("room_players")
+}
+
+model BingoCard {
+  id                String    @id @default(uuid()) @db.Uuid
+  roomId            String    @map("room_id") @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  numbers           Int[]
+  marked            Int[]     @default([])
+  lines             Int       @default(0)
+  bingoLockoutUntil DateTime? @map("bingo_lockout_until")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([roomId])
+  @@map("bingo_cards")
+}
+
+model BingoPick {
+  id        String   @id @default(uuid()) @db.Uuid
+  roomId    String   @map("room_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  number    Int
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
+  @@map("bingo_picks")
 }

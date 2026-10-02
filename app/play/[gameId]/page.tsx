@@ -28,13 +28,12 @@ export default function GamePlayPage({
   const game = getGame(gameId);
 
   const [creating, setCreating] = useState(false);
+  const [soloing, setSoloing] = useState(false);
   const [joining, setJoining] = useState(false);
   const [code, setCode] = useState("");
 
   useEffect(() => {
-    if (!game) {
-      router.replace("/");
-    }
+    if (!game) router.replace("/");
   }, [game, router]);
 
   if (!game) {
@@ -52,7 +51,7 @@ export default function GamePlayPage({
       const res = await fetch("/api/rooms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId: game.id }),
+        body: JSON.stringify({ gameId: game!.id }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -60,10 +59,32 @@ export default function GamePlayPage({
         setCreating(false);
         return;
       }
-      router.push(`/play/${game.id}/room/${data.code}`);
+      router.push(`/play/${game!.id}/room/${data.code}`);
     } catch {
       toast.error("Network error");
       setCreating(false);
+    }
+  }
+
+  async function handleSolo() {
+    if (!game) return;
+    setSoloing(true);
+    try {
+      const res = await fetch("/api/rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameId: game!.id, solo: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed to start");
+        setSoloing(false);
+        return;
+      }
+      router.push(`/play/${game!.id}/room/${data.code}`);
+    } catch {
+      toast.error("Network error");
+      setSoloing(false);
     }
   }
 
@@ -104,12 +125,38 @@ export default function GamePlayPage({
         </div>
       </motion.div>
 
+      {/* Play vs Computer — primary */}
+      <motion.button
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, delay: 0.05 }}
+        onClick={handleSolo}
+        disabled={soloing}
+        className="flex w-full items-center justify-between gap-4 rounded-2xl border-2 border-accent bg-accent/5 p-5 text-left transition-all hover:bg-accent/10 disabled:opacity-60"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-accent-fg">
+            {soloing ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Bot className="h-5 w-5" />
+            )}
+          </div>
+          <div>
+            <p className="font-semibold">Play vs Computer</p>
+            <p className="text-xs text-muted-foreground">
+              Jump right in against a bot — no waiting
+            </p>
+          </div>
+        </div>
+        <Sparkles className="h-5 w-5 text-accent" />
+      </motion.button>
+
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Create room card */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: 0.05 }}
+          transition={{ duration: 0.25, delay: 0.1 }}
           className="flex flex-col gap-3 rounded-2xl border bg-card p-5"
         >
           <div className="flex items-center gap-2">
@@ -117,12 +164,13 @@ export default function GamePlayPage({
             <h2 className="font-semibold">Create a room</h2>
           </div>
           <p className="text-xs text-muted-foreground">
-            Start a new game. You'll get a 6-letter code to share with friends.
+            Start a game and share the 6-letter code with friends.
           </p>
           <Button
             onClick={handleCreate}
             disabled={creating}
             className="w-full"
+            variant="outline"
           >
             {creating ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -133,11 +181,10 @@ export default function GamePlayPage({
           </Button>
         </motion.div>
 
-        {/* Join room card */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: 0.1 }}
+          transition={{ duration: 0.25, delay: 0.15 }}
           className="flex flex-col gap-3 rounded-2xl border bg-card p-5"
         >
           <div className="flex items-center gap-2">
@@ -173,21 +220,6 @@ export default function GamePlayPage({
             </Button>
           </form>
         </motion.div>
-      </div>
-
-      {/* Play vs AI — coming later */}
-      <div className="rounded-2xl border border-dashed bg-card/50 p-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
-            <Bot className="h-5 w-5 text-muted-foreground" />
-          </div>
-          <div>
-            <p className="text-sm font-medium">Play vs Computer</p>
-            <p className="text-xs text-muted-foreground">
-              Coming in the next update
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );

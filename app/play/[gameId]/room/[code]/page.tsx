@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useRoom } from "@/hooks/useRoom";
 import { RoomLobby } from "@/components/room/RoomLobby";
+import { BingoGame } from "@/components/bingo/BingoGame";
 import { Button } from "@/components/ui/button";
+import { useUser } from "@/hooks/useUser";
 import { toast } from "sonner";
 
 export default function RoomPage({
@@ -15,6 +17,7 @@ export default function RoomPage({
 }) {
   const { gameId, code } = use(params);
   const router = useRouter();
+  const { user } = useUser();
   const { room, loading, error, join, leave, start } = useRoom(code);
 
   useEffect(() => {
@@ -24,7 +27,7 @@ export default function RoomPage({
     }
   }, [error, gameId, router]);
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -45,7 +48,7 @@ export default function RoomPage({
     );
   }
 
-  // Game not started yet — show lobby
+  // Lobby state
   if (room.status === "lobby") {
     return (
       <RoomLobby
@@ -57,19 +60,19 @@ export default function RoomPage({
     );
   }
 
-  // Game in progress — placeholder for now
+  // Playing / finished state — show game
   return (
-    <div className="flex flex-col items-center gap-4 py-20 text-center">
-      <h1 className="text-3xl font-bold">Game in progress</h1>
-      <p className="text-muted-foreground">
-        Room {room.code} · {room.players.length} players
-      </p>
-      <p className="text-sm text-muted-foreground">
-        Game logic coming in Module 6.
-      </p>
-      <Button onClick={leave} variant="outline">
-        Leave Room
-      </Button>
-    </div>
+    <BingoGame
+      roomId={room.id}
+      roomCode={room.code}
+      currentUserId={user.id}
+      players={room.players.map((p) => ({
+        id: p.id,
+        username: p.username,
+        display_name: p.display_name,
+        avatar_url: p.avatar_url,
+      }))}
+      hostId={room.hostId}
+    />
   );
 }

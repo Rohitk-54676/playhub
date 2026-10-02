@@ -4,8 +4,8 @@ export default function RoomLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-4xl px-4 py-6 md:px-8 md:py-10">
+    <div className="fixed inset-0 flex flex-col bg-background">
+      <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-3 py-2">
         {children}
       </div>
     </div>

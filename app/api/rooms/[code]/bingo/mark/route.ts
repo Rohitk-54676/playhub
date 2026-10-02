@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
-import { startBingoGame } from "@/lib/bingo/engine";
+import { markCell } from "@/lib/bingo/engine";
 
-// POST /api/rooms/[code]/start — host-only, starts the game
+// POST /api/rooms/[code]/bingo/mark  { cellIndex: 0..24 }
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ code: string }> }
 ) {
   const supabase = await createClient();
@@ -18,40 +18,27 @@ export async function POST(
   }
 
   const { code } = await params;
+  const { cellIndex } = await req.json();
+
+  if (typeof cellIndex !== "number") {
+    return NextResponse.json({ error: "Invalid cell" }, { status: 400 });
+  }
 
   try {
     const room = await prisma.room.findUnique({
       where: { code: code.toUpperCase() },
-      include: { players: true },
     });
-
     if (!room) {
       return NextResponse.json({ error: "Room not found" }, { status: 404 });
     }
 
-    if (room.hostId !== user.id) {
-      return NextResponse.json(
-        { error: "Only the host can start" },
-        { status: 403 }
-      );
+    const result = await markCell(room.id, user.id, cellIndex);
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
     }
-
-    if (room.status !== "lobby") {
-      return NextResponse.json({ error: "Already started" }, { status: 409 });
-    }
-
-    if (room.players.length < 2) {
-      return NextResponse.json(
-        { error: "Need at least 2 players" },
-        { status: 400 }
-      );
-    }
-
-    await startBingoGame(room.id);
-
-    return NextResponse.json({ ok: true, status: "playing" });
+    return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error("POST start error:", e);
+    console.error("POST mark error:", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

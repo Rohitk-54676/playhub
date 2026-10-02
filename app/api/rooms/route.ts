@@ -3,8 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { generateRoomCode } from "@/lib/rooms/code";
 import { getGame } from "@/lib/games";
+import { generateCard } from "@/lib/bingo/card";
+import { BOT_USERNAME } from "@/lib/bingo/ai";
 
-// POST /api/rooms  { gameId: "bingo" }
+// POST /api/rooms  { gameId: "bingo", solo?: boolean }
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const {
@@ -15,7 +17,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const { gameId } = await req.json();
+  const { gameId, solo } = await req.json();
 
   const game = getGame(gameId);
   if (!game) {
@@ -29,7 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Generate a unique code (retry if collision)
+    // Generate unique code
     let code = generateRoomCode();
     let attempts = 0;
     while (attempts < 10) {
@@ -44,26 +46,65 @@ export async function POST(req: NextRequest) {
         code,
         gameId,
         hostId: user.id,
-        status: "lobby",
+        status: solo ? "playing" : "lobby",
+        isSolo: !!solo,
         players: {
           create: [{ userId: user.id, isHost: true }],
         },
       },
-      include: {
-        players: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                username: true,
-                displayName: true,
-                avatarUrl: true,
-              },
-            },
-          },
-        },
-      },
     });
+
+    // Solo mode — add bot + generate cards immediately
+    if (solo) {
+      const bot = await prisma.profile.findUnique({
+        where: { username: BOT_USERNAME },
+      });
+      if (!bot) {
+        return NextResponse.json(
+          { error: "Bot profile not found. Run seed script." },
+          { status: 500 }
+        );
+      }
+
+      await prisma.roomPlayer.create({
+        data: {
+          roomId: room.id,
+          userId: bot.id,
+          isHost: false,
+          isBot: true,
+        },
+      });
+
+      await prisma.bingoCard.createMany({
+        data: [
+          {
+            roomId: room.id,
+            userId: user.id,
+            numbers: generateCard(),
+            marked: [],
+            lines: 0,
+          },
+          {
+            roomId: room.id,
+            userId: bot.id,
+            numbers: generateCard(),
+            marked: [],
+            lines: 0,
+          },
+        ],
+      });
+
+      // Set initial state
+      await prisma.room.update({
+        where: { id: room.id },
+        data: {
+          state: {
+            turnOrder: [user.id, bot.id],
+            startedAt: new Date().toISOString(),
+          } as object,
+        },
+      });
+    }
 
     return NextResponse.json({
       id: room.id,

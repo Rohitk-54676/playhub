@@ -30,37 +30,46 @@ export async function POST(
       return NextResponse.json({ error: "Room not found" }, { status: 404 });
     }
 
-    // Remove this player
     await prisma.roomPlayer.deleteMany({
       where: { roomId: room.id, userId: user.id },
     });
 
-    // Remaining players
     const remaining = room.players.filter((p) => p.userId !== user.id);
 
-    // No one left — delete the room
+    // No one left — delete
     if (remaining.length === 0) {
       await prisma.room.delete({ where: { id: room.id } });
       return NextResponse.json({ deleted: true });
     }
 
-    // If the leaving user was the host, promote the next player
+    // Host left — promote next player
     if (room.hostId === user.id) {
-      const nextHost = remaining[0]; // earliest join time
-
+      const nextHost = remaining[0];
       await prisma.room.update({
         where: { id: room.id },
         data: { hostId: nextHost.userId },
       });
-
       await prisma.roomPlayer.update({
         where: {
-          roomId_userId: {
-            roomId: room.id,
-            userId: nextHost.userId,
-          },
+          roomId_userId: { roomId: room.id, userId: nextHost.userId },
         },
         data: { isHost: true },
+      });
+    }
+
+    // Game in progress + only 1 left → game over
+    if (room.status === "playing" && remaining.length === 1) {
+      await prisma.room.update({
+        where: { id: room.id },
+        data: {
+          status: "finished",
+          state: {
+            winnerId: remaining[0].userId,
+            winningLines: [],
+            finishedAt: new Date().toISOString(),
+            reason: "opponent_left",
+          } as object,
+        },
       });
     }
 
