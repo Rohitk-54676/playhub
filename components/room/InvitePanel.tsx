@@ -7,15 +7,16 @@ import { toast } from "sonner";
 
 interface Props {
   code: string;
+  gameId: string;
 }
 
-export function InvitePanel({ code }: Props) {
+export function InvitePanel({ code, gameId }: Props) {
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const url =
+    const url =
     typeof window !== "undefined"
-      ? `${window.location.origin}/play/bingo/room/${code}`
+      ? `${window.location.origin}/play/${gameId}/room/${code}`
       : "";
 
   async function copyCode() {

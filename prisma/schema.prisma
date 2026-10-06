@@ -187,3 +187,25 @@ model BingoPick {
   @@index([roomId, createdAt])
   @@map("bingo_picks")
 }
+
+model DotsGame {
+  id            String   @id @default(uuid()) @db.Uuid
+  roomId        String   @unique @map("room_id") @db.Uuid
+  size          Int      @default(5)
+  horizontal    Json     @default("[]")
+  vertical      Json     @default("[]")
+  lineOwners    Json     @default("{}") // { "h:5": userId, "v:12": userId }
+  boxes         Json     @default("{}")
+  playerColors  Json     @default("{}")
+  playerLetters Json     @default("{}")
+  turnOrder     Json     @default("[]")
+  currentTurn   Int      @default(0)
+  lastLineType  String?  @map("last_line_type")
+  lastLineIdx   Int?     @map("last_line_idx")
+  winnerId      String?  @map("winner_id") @db.Uuid
+  turnStartedAt DateTime @default(now()) @map("turn_started_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("dots_games")
+}

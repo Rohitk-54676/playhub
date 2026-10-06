@@ -8,9 +8,9 @@ import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 export function Nav() {
   const { unread } = useUnreadMessages();
 
-  const items = [
+    const items = [
     { href: "/", label: "Home", icon: Home, badge: 0 },
-    { href: "/play/bingo", label: "Games", icon: Gamepad2, badge: 0 },
+    { href: "/games", label: "Games", icon: Gamepad2, badge: 0 },
     { href: "/messages", label: "Chat", icon: MessageCircle, badge: unread },
     { href: "/friends", label: "Friends", icon: Users, badge: 0 },
     { href: "/settings", label: "Me", icon: User, badge: 0 },

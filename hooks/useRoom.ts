@@ -124,18 +124,17 @@ export function useRoom(code: string | null) {
     }, [code, broadcast, refresh]);
 
     // Leave and navigate away
-    const leave = useCallback(async () => {
-        if (!code) return;
-        try {
-            await fetch(`/api/rooms/${code}/leave`, { method: "POST" });
-            // Tell everyone the room changed (host may have shifted)
-            await broadcast("room_updated");
-            await broadcast("player_left");
-        } catch {
-            // ignore
-        }
-        router.push("/play/bingo");
-    }, [code, broadcast, router]);
+      const leave = useCallback(async () => {
+    if (!code) return;
+    try {
+      await fetch(`/api/rooms/${code}/leave`, { method: "POST" });
+      await broadcast("player_left");
+    } catch {
+      // ignore
+    }
+    const gameId = room?.gameId ?? "bingo";
+    router.push(`/play/${gameId}`);
+  }, [code, broadcast, router, room]);
 
     // Start the game (host only)
     const start = useCallback(async () => {

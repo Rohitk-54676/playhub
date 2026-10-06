@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { useRoom } from "@/hooks/useRoom";
 import { RoomLobby } from "@/components/room/RoomLobby";
 import { BingoGame } from "@/components/bingo/BingoGame";
+import { DotsGame } from "@/components/dots/DotsGame";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/hooks/useUser";
 import { toast } from "sonner";
@@ -47,6 +48,15 @@ export default function RoomPage() {
     );
   }
 
+    if (room.gameId && room.gameId !== gameId) {
+    router.replace(`/play/${room.gameId}/room/${room.code}`);
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   if (room.status === "lobby") {
     return (
       <RoomLobby
@@ -58,17 +68,30 @@ export default function RoomPage() {
     );
   }
 
+  const players = room.players.map((p) => ({
+    id: p.id,
+    username: p.username,
+    display_name: p.display_name,
+    avatar_url: p.avatar_url,
+  }));
+
+  if (gameId === "dots-and-boxes") {
+    return (
+      <DotsGame
+        roomCode={room.code}
+        currentUserId={user.id}
+        players={players}
+        hostId={room.hostId}
+      />
+    );
+  }
+
   return (
     <BingoGame
       roomId={room.id}
       roomCode={room.code}
       currentUserId={user.id}
-      players={room.players.map((p) => ({
-        id: p.id,
-        username: p.username,
-        display_name: p.display_name,
-        avatar_url: p.avatar_url,
-      }))}
+      players={players}
       hostId={room.hostId}
     />
   );

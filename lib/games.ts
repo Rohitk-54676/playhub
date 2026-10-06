@@ -34,16 +34,16 @@ export const GAMES: GameMeta[] = [
     color: "from-blue-500 to-cyan-500",
     available: false,
   },
-  {
+      {
     id: "dots-and-boxes",
     name: "Dots & Boxes",
     icon: "🔵🔴",
     minPlayers: 2,
     maxPlayers: 4,
-    avgTime: "~5 min",
-    description: "Connect dots, claim squares, most letters wins.",
+    avgTime: "5–15 min",
+    description: "Draw lines, complete squares, and claim them with your letter.",
     color: "from-orange-500 to-red-500",
-    available: false,
+    available: true,
   },
 ];
 

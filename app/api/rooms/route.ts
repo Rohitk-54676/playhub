@@ -6,7 +6,7 @@ import { getGame } from "@/lib/games";
 import { generateCard } from "@/lib/bingo/card";
 import { BOT_USERNAME } from "@/lib/bingo/ai";
 
-// POST /api/rooms  { gameId: "bingo", solo?: boolean }
+// POST /api/rooms  { gameId, solo?, size? }
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const {
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const { gameId, solo } = await req.json();
+  const { gameId, solo, size } = await req.json();
 
   const game = getGame(gameId);
   if (!game) {
@@ -31,7 +31,6 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Generate unique code
     let code = generateRoomCode();
     let attempts = 0;
     while (attempts < 10) {
@@ -48,14 +47,20 @@ export async function POST(req: NextRequest) {
         hostId: user.id,
         status: solo ? "playing" : "lobby",
         isSolo: !!solo,
+                state:
+          gameId === "dots-and-boxes"
+            ? ({
+                size: [4, 5, 6, 7, 8].includes(size) ? size : 5,
+              } as object)
+            : undefined,
         players: {
           create: [{ userId: user.id, isHost: true }],
         },
       },
     });
 
-    // Solo mode — add bot + generate cards immediately
-    if (solo) {
+    // Solo mode — only for Bingo currently
+    if (solo && gameId === "bingo") {
       const bot = await prisma.profile.findUnique({
         where: { username: BOT_USERNAME },
       });
@@ -94,7 +99,6 @@ export async function POST(req: NextRequest) {
         ],
       });
 
-      // Set initial state
       await prisma.room.update({
         where: { id: room.id },
         data: {

@@ -17,6 +17,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getGame } from "@/lib/games";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+const DOTS_SIZES = [
+  { value: 4, label: "4×4", sub: "9 boxes" },
+  { value: 5, label: "5×5", sub: "16 boxes" },
+  { value: 6, label: "6×6", sub: "25 boxes" },
+  { value: 7, label: "7×7", sub: "36 boxes" },
+  { value: 8, label: "8×8", sub: "49 boxes" },
+];
 
 export default function GamePlayPage() {
   const router = useRouter();
@@ -25,9 +34,9 @@ export default function GamePlayPage() {
   const game = getGame(gameId);
 
   const [creating, setCreating] = useState(false);
-  const [soloing, setSoloing] = useState(false);
   const [joining, setJoining] = useState(false);
   const [code, setCode] = useState("");
+  const [dotsSize, setDotsSize] = useState(5);
 
   useEffect(() => {
     if (!game) router.replace("/");
@@ -48,7 +57,7 @@ export default function GamePlayPage() {
       const res = await fetch("/api/rooms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId: game.id }),
+        body: JSON.stringify({ gameId: game.id, size: dotsSize }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -63,28 +72,6 @@ export default function GamePlayPage() {
     }
   }
 
-  async function handleSolo() {
-    if (!game) return;
-    setSoloing(true);
-    try {
-      const res = await fetch("/api/rooms", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId: game.id, solo: true }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error ?? "Failed to start");
-        setSoloing(false);
-        return;
-      }
-      router.push(`/play/${game.id}/room/${data.code}`);
-    } catch {
-      toast.error("Network error");
-      setSoloing(false);
-    }
-  }
-
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
     if (!game) return;
@@ -96,6 +83,8 @@ export default function GamePlayPage() {
     setJoining(true);
     router.push(`/play/${game.id}/room/${clean}`);
   }
+
+  const isDots = game.id === "dots-and-boxes";
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
@@ -122,31 +111,36 @@ export default function GamePlayPage() {
         </div>
       </motion.div>
 
-      <motion.button
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25, delay: 0.05 }}
-        onClick={handleSolo}
-        disabled={soloing}
-        className="flex w-full items-center justify-between gap-4 rounded-2xl border-2 border-accent bg-accent/5 p-5 text-left transition-all hover:bg-accent/10 disabled:opacity-60"
-      >
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-accent-fg">
-            {soloing ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Bot className="h-5 w-5" />
-            )}
+      {/* Grid size picker for dots */}
+      {isDots && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, delay: 0.05 }}
+          className="flex flex-col gap-3 rounded-2xl border bg-card p-5"
+        >
+          <Label>Board size</Label>
+          <div className="grid grid-cols-5 gap-2">
+            {DOTS_SIZES.map((s) => (
+              <button
+                key={s.value}
+                onClick={() => setDotsSize(s.value)}
+                className={cn(
+                  "flex flex-col items-center gap-1 rounded-xl border p-3 transition-all",
+                  dotsSize === s.value
+                    ? "border-accent bg-accent/10 text-accent"
+                    : "hover:border-accent/50"
+                )}
+              >
+                <span className="text-lg font-bold">{s.label}</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {s.sub}
+                </span>
+              </button>
+            ))}
           </div>
-          <div>
-            <p className="font-semibold">Play vs Computer</p>
-            <p className="text-xs text-muted-foreground">
-              Jump right in against a bot — no waiting
-            </p>
-          </div>
-        </div>
-        <Sparkles className="h-5 w-5 text-accent" />
-      </motion.button>
+        </motion.div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <motion.div

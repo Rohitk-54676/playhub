@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { startBingoGame } from "@/lib/bingo/engine";
+import { startDotsGame } from "@/lib/dots/engine";
 
 // POST /api/rooms/[code]/start — host-only, starts the game
 export async function POST(
@@ -28,18 +29,12 @@ export async function POST(
     if (!room) {
       return NextResponse.json({ error: "Room not found" }, { status: 404 });
     }
-
     if (room.hostId !== user.id) {
-      return NextResponse.json(
-        { error: "Only the host can start" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Host only" }, { status: 403 });
     }
-
     if (room.status !== "lobby") {
       return NextResponse.json({ error: "Already started" }, { status: 409 });
     }
-
     if (room.players.length < 2) {
       return NextResponse.json(
         { error: "Need at least 2 players" },
@@ -47,7 +42,14 @@ export async function POST(
       );
     }
 
-    await startBingoGame(room.id);
+        if (room.gameId === "dots-and-boxes") {
+      const stateObj = (room.state as { size?: number } | null) ?? {};
+      const raw = stateObj.size ?? 5;
+      const size = [4, 5, 6, 7, 8].includes(raw) ? raw : 5;
+      await startDotsGame(room.id, size);
+    } else {
+      await startBingoGame(room.id);
+    }
 
     return NextResponse.json({ ok: true, status: "playing" });
   } catch (e) {

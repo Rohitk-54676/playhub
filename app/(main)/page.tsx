@@ -2,20 +2,34 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Users, Clock, Sparkles, Bot } from "lucide-react";
-import { GAMES } from "@/lib/games";
+import {
+  Gamepad2,
+  MessageCircle,
+  Users,
+  ChevronRight,
+  Sparkles,
+  Trophy,
+} from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
+import { useFriends } from "@/hooks/useFriends";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { GAMES } from "@/lib/games";
 import { cn } from "@/lib/utils";
 
 export default function HomePage() {
   const { profile } = useProfile();
+  const { friends } = useFriends();
+  const { unread } = useUnreadMessages();
 
   const greeting = profile
     ? `Hey, ${profile.display_name ?? profile.username} 👋`
-    : "Play with friends.";
+    : "Welcome to PlayHub";
+
+  const availableGames = GAMES.filter((g) => g.available);
 
   return (
     <div className="flex flex-col gap-8">
+      {/* Greeting */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -32,71 +46,152 @@ export default function HomePage() {
           {greeting}
         </h1>
         <p className="text-muted-foreground">
-          Pick a game, create a room, or play against the computer.
+          Play games, chat with friends, and hang out.
         </p>
       </motion.div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {GAMES.map((game, i) => (
-          <motion.div
-            key={game.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.05 + i * 0.05 }}
-            whileHover={game.available ? { y: -4 } : {}}
+      {/* Quick play */}
+      <section className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Quick play</h2>
+          <Link
+            href="/games"
+            className="flex items-center gap-1 text-xs font-medium text-accent hover:underline"
           >
-            <Link
-              href={game.available ? `/play/${game.id}` : "#"}
-              className={cn(
-                "group flex flex-col gap-4 rounded-2xl border bg-card p-5 transition-shadow",
-                game.available
-                  ? "cursor-pointer hover:shadow-lg"
-                  : "cursor-not-allowed opacity-60"
-              )}
+            All games
+            <ChevronRight className="h-3 w-3" />
+          </Link>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          {availableGames.slice(0, 4).map((game, i) => (
+            <motion.div
+              key={game.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.05 + i * 0.05 }}
+              whileHover={{ y: -3 }}
             >
-              <div
-                className={cn(
-                  "flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br text-3xl",
-                  game.color
-                )}
+              <Link
+                href={`/play/${game.id}`}
+                className="group flex items-center gap-4 rounded-2xl border bg-card p-4 transition-shadow hover:shadow-lg"
               >
-                {game.icon}
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-semibold">{game.name}</h2>
-                  {!game.available && (
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                      Soon
-                    </span>
+                <div
+                  className={cn(
+                    "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-2xl",
+                    game.color
                   )}
+                >
+                  {game.icon}
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {game.description}
-                </p>
-              </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{game.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {game.minPlayers}–{game.maxPlayers} players · {game.avgTime}
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1" />
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </section>
 
-              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Users className="h-3.5 w-3.5" />
-                  {game.minPlayers}–{game.maxPlayers}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" />
-                  {game.avgTime}
-                </span>
-                {game.available && (
-                  <span className="ml-auto flex items-center gap-1 text-accent opacity-0 transition-opacity group-hover:opacity-100">
-                    <Bot className="h-3.5 w-3.5" />
-                    Play →
-                  </span>
-                )}
-              </div>
-            </Link>
-          </motion.div>
-        ))}
-      </div>
+      {/* Stats grid */}
+      <section className="grid gap-4 sm:grid-cols-3">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          <Link
+            href="/friends"
+            className="flex flex-col gap-2 rounded-2xl border bg-card p-5 transition-shadow hover:shadow-lg"
+          >
+            <div className="flex items-center gap-2 text-accent">
+              <Users className="h-5 w-5" />
+              <span className="text-2xl font-bold text-foreground">
+                {friends.length}
+              </span>
+            </div>
+            <p className="text-sm font-medium">Friends</p>
+            <p className="text-xs text-muted-foreground">
+              {friends.length === 0
+                ? "Add friends to play together"
+                : "Ready to hang out"}
+            </p>
+          </Link>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.15 }}
+        >
+          <Link
+            href="/messages"
+            className="flex flex-col gap-2 rounded-2xl border bg-card p-5 transition-shadow hover:shadow-lg"
+          >
+            <div className="flex items-center gap-2 text-accent">
+              <MessageCircle className="h-5 w-5" />
+              <span className="text-2xl font-bold text-foreground">
+                {unread}
+              </span>
+            </div>
+            <p className="text-sm font-medium">Unread messages</p>
+            <p className="text-xs text-muted-foreground">
+              {unread === 0 ? "All caught up" : "You have new messages"}
+            </p>
+          </Link>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+        >
+          <Link
+            href="/play/bingo"
+            className="flex flex-col gap-2 rounded-2xl border bg-card p-5 transition-shadow hover:shadow-lg"
+          >
+            <div className="flex items-center gap-2 text-accent">
+              <Trophy className="h-5 w-5" />
+              <span className="text-2xl font-bold text-foreground">
+                {availableGames.length}
+              </span>
+            </div>
+            <p className="text-sm font-medium">Games available</p>
+            <p className="text-xs text-muted-foreground">
+              More coming soon
+            </p>
+          </Link>
+        </motion.div>
+      </section>
+
+      {/* Play vs Computer CTA */}
+      <motion.section
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.25 }}
+      >
+        <Link
+          href="/play/bingo"
+          className="group flex items-center justify-between gap-4 rounded-2xl border-2 border-accent bg-accent/5 p-5 transition-all hover:bg-accent/10"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-accent-fg">
+              <Gamepad2 className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-semibold">Play vs Computer</p>
+              <p className="text-xs text-muted-foreground">
+                Jump right in — no waiting
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="h-5 w-5 text-accent transition-transform group-hover:translate-x-1" />
+        </Link>
+      </motion.section>
     </div>
   );
 }

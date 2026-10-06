@@ -72,7 +72,7 @@ export function RoomLobby({ room, onStart, onLeave, onJoin }: Props) {
         </Button>
       </div>
 
-      <InvitePanel code={room.code} />
+      <InvitePanel code={room.code} gameId={room.gameId} />
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
