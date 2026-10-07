@@ -1,5 +1,6 @@
 "use client";
 
+import { track, EVENT } from "@/lib/analytics";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -25,13 +26,44 @@ export default function LoginPage() {
       email,
       password,
     });
-    setLoading(false);
 
     if (error) {
+      setLoading(false);
       toast.error(error.message);
       return;
     }
+
+    // Check if this user is banned
+    const {
+      data: { user: signedInUser },
+    } = await supabase.auth.getUser();
+
+    if (signedInUser) {
+      try {
+        const profileRes = await fetch(`/api/profile?id=${signedInUser.id}`);
+        if (profileRes.ok) {
+          const profile = await profileRes.json();
+          if (profile.is_banned) {
+            await supabase.auth.signOut();
+            setLoading(false);
+            toast.error(
+              `Your account has been banned.${
+                profile.banned_reason
+                  ? ` Reason: ${profile.banned_reason}`
+                  : ""
+              }`
+            );
+            return;
+          }
+        }
+      } catch {
+        // ignore — proceed to login even if ban check fails
+      }
+    }
+
+    setLoading(false);
     toast.success("Welcome back!");
+    track(EVENT.LOGIN);
     router.push("/");
     router.refresh();
   }
@@ -56,7 +88,6 @@ export default function LoginPage() {
       return;
     }
 
-    // Create a guest profile with a random username
     if (data.user) {
       const guestUsername = `guest_${Math.random().toString(36).slice(2, 8)}`;
       await fetch("/api/profile/create", {
@@ -73,6 +104,7 @@ export default function LoginPage() {
 
     setLoading(false);
     toast.success("Playing as guest");
+    track(EVENT.GUEST_LOGIN);
     router.push("/");
     router.refresh();
   }

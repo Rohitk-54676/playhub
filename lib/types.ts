@@ -5,6 +5,11 @@ export interface Profile {
   avatar_url: string | null;
   accent: string;
   is_guest: boolean;
+  is_admin: boolean;
+  is_banned: boolean;
+  banned_at: string | null;
+  banned_reason: string | null;
+  last_seen_at: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { track, EVENT } from "@/lib/analytics";
 import type { Friend, FriendRequest, FriendStatus } from "@/lib/types";
 
 export async function searchUsers(q: string): Promise<
@@ -55,6 +56,7 @@ export async function sendFriendRequest(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ targetId }),
     });
+    track(EVENT.FRIEND_REQUEST);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       return { error: data.error ?? "Failed to send request" };
@@ -75,6 +77,7 @@ export async function respondToRequest(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ friendshipId, action }),
     });
+    track(EVENT.FRIEND_ACCEPTED);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       return { error: data.error ?? "Failed to respond" };

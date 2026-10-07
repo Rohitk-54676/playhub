@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const profile = id
+        const profile = id
       ? await prisma.profile.findUnique({ where: { id } })
       : await prisma.profile.findFirst({
           where: { username: { equals: username!, mode: "insensitive" } },
@@ -25,7 +25,23 @@ export async function GET(req: NextRequest) {
     if (!profile) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
-    return NextResponse.json(profile);
+
+    // Normalize to snake_case
+    return NextResponse.json({
+      id: profile.id,
+      username: profile.username,
+      display_name: profile.displayName,
+      avatar_url: profile.avatarUrl,
+      accent: profile.accent,
+      is_guest: profile.isGuest,
+      is_admin: profile.isAdmin,
+      is_banned: profile.isBanned,
+      banned_at: profile.bannedAt?.toISOString() ?? null,
+      banned_reason: profile.bannedReason,
+      last_seen_at: profile.lastSeenAt?.toISOString() ?? null,
+      created_at: profile.createdAt.toISOString(),
+      updated_at: profile.updatedAt.toISOString(),
+    });
   } catch (e) {
     console.error("GET /api/profile error:", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

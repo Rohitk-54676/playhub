@@ -1,5 +1,6 @@
 "use client";
 
+import { track, EVENT } from "@/lib/analytics";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -67,6 +68,7 @@ export default function SignupPage() {
 
     setLoading(false);
     toast.success("Account created!");
+    track(EVENT.SIGNUP, { username });
     router.push("/");
     router.refresh();
   }

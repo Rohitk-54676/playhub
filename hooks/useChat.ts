@@ -1,5 +1,6 @@
 "use client";
 
+import { track, EVENT } from "@/lib/analytics";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
@@ -164,6 +165,7 @@ export function useChat(conversationId: string | null) {
           if (prev.some((m) => m.id === msg.id)) return prev;
           return [...prev, msg];
         });
+        track(EVENT.MESSAGE_SENT);
 
         if (channelRef.current) {
           await channelRef.current.send({

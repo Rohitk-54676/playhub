@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { ArrowRight } from "lucide-react";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -200,6 +201,33 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* Admin */}
+      {profile.is_admin && (
+        <section className="flex flex-col gap-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            Admin
+            <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+              Admin
+            </span>
+          </h2>
+          <div className="flex flex-col gap-4 rounded-2xl border border-accent/30 bg-accent/5 p-5">
+            <div>
+              <p className="text-sm font-medium">Admin dashboard</p>
+              <p className="text-xs text-muted-foreground">
+                Manage users, view analytics, and configure PlayHub.
+              </p>
+            </div>
+            <Button
+              onClick={() => router.push("/admin")}
+              className="w-fit"
+            >
+              Open Admin Panel
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </section>
+      )}
+      
       {/* Account */}
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-semibold">Account</h2>

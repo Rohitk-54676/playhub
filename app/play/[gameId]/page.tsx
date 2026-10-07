@@ -1,5 +1,6 @@
 "use client";
 
+import { track, EVENT } from "@/lib/analytics";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -66,6 +67,7 @@ export default function GamePlayPage() {
         return;
       }
       router.push(`/play/${game.id}/room/${data.code}`);
+      track(EVENT.ROOM_CREATED, { gameId: game.id });
     } catch {
       toast.error("Network error");
       setCreating(false);

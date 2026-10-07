@@ -1,5 +1,6 @@
 "use client";
 
+import { track, EVENT } from "@/lib/analytics";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -117,6 +118,7 @@ export function useRoom(code: string | null) {
             }
             await broadcast("player_joined");
             await refresh();
+            track(EVENT.ROOM_JOINED, { code });
             return { error: null };
         } catch {
             return { error: "Network error" };
@@ -147,6 +149,7 @@ export function useRoom(code: string | null) {
             }
             await broadcast("game_started");
             await refresh();
+            track(EVENT.GAME_STARTED, { code });
             return { error: null };
         } catch {
             return { error: "Network error" };
