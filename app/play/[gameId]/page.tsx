@@ -1,6 +1,5 @@
 "use client";
 
-import { track, EVENT } from "@/lib/analytics";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -12,11 +11,13 @@ import {
   Users,
   Clock,
   Bot,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getGame } from "@/lib/games";
+import { track, EVENT } from "@/lib/analytics";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,7 @@ export default function GamePlayPage() {
   const game = getGame(gameId);
 
   const [creating, setCreating] = useState(false);
+  const [soloing, setSoloing] = useState(false);
   const [joining, setJoining] = useState(false);
   const [code, setCode] = useState("");
   const [dotsSize, setDotsSize] = useState(5);
@@ -51,6 +53,9 @@ export default function GamePlayPage() {
     );
   }
 
+  const isDots = game.id === "dots-and-boxes";
+  const supportsAI = game.id === "bingo" || isDots; // both games now
+
   async function handleCreate() {
     if (!game) return;
     setCreating(true);
@@ -66,11 +71,39 @@ export default function GamePlayPage() {
         setCreating(false);
         return;
       }
-      router.push(`/play/${game.id}/room/${data.code}`);
       track(EVENT.ROOM_CREATED, { gameId: game.id });
+      router.push(`/play/${game.id}/room/${data.code}`);
     } catch {
       toast.error("Network error");
       setCreating(false);
+    }
+  }
+
+  async function handleSolo() {
+    if (!game) return;
+    setSoloing(true);
+    if (isDots) {
+      // Offline AI game — no server
+      router.push("/play/dots-and-boxes/vs-computer");
+      return;
+    }
+    try {
+      const res = await fetch("/api/rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameId: game.id, solo: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed to start");
+        setSoloing(false);
+        return;
+      }
+      track(EVENT.ROOM_CREATED, { gameId: game.id, solo: true });
+      router.push(`/play/${game.id}/room/${data.code}`);
+    } catch {
+      toast.error("Network error");
+      setSoloing(false);
     }
   }
 
@@ -85,8 +118,6 @@ export default function GamePlayPage() {
     setJoining(true);
     router.push(`/play/${game.id}/room/${clean}`);
   }
-
-  const isDots = game.id === "dots-and-boxes";
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
@@ -113,29 +144,81 @@ export default function GamePlayPage() {
         </div>
       </motion.div>
 
-      {/* Grid size picker for dots */}
+      {/* Play vs Computer */}
+      {supportsAI && (
+        <motion.button
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, delay: 0.05 }}
+          onClick={handleSolo}
+          disabled={soloing}
+          className="flex w-full items-center justify-between gap-4 rounded-2xl border-2 border-accent bg-accent/5 p-5 text-left transition-all hover:bg-accent/10 disabled:opacity-60"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-accent-fg">
+              {soloing ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Bot className="h-5 w-5" />
+              )}
+            </div>
+            <div>
+              <p className="font-semibold">Play vs Computer</p>
+              <p className="text-xs text-muted-foreground">
+                Jump right in against a bot — no waiting
+              </p>
+            </div>
+          </div>
+          <Sparkles className="h-5 w-5 text-accent" />
+        </motion.button>
+      )}
+
+      {/* Play Offline — only for Dots */}
+      {isDots && (
+        <motion.button
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, delay: 0.08 }}
+          onClick={() => router.push("/play/dots-and-boxes/offline")}
+          className="flex w-full items-center justify-between gap-4 rounded-2xl border bg-card p-5 text-left transition-all hover:border-accent"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent/10 text-accent">
+              <Smartphone className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-semibold">Play Offline</p>
+              <p className="text-xs text-muted-foreground">
+                Pass the phone — 2–4 friends on one device
+              </p>
+            </div>
+          </div>
+        </motion.button>
+      )}
+
+      {/* Grid size picker */}
       {isDots && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: 0.05 }}
+          transition={{ duration: 0.25, delay: 0.1 }}
           className="flex flex-col gap-3 rounded-2xl border bg-card p-5"
         >
-          <Label>Board size</Label>
+          <Label>Board size (for online games)</Label>
           <div className="grid grid-cols-5 gap-2">
             {DOTS_SIZES.map((s) => (
               <button
                 key={s.value}
                 onClick={() => setDotsSize(s.value)}
                 className={cn(
-                  "flex flex-col items-center gap-1 rounded-xl border p-3 transition-all",
+                  "flex flex-col items-center gap-1 rounded-xl border p-2 transition-all",
                   dotsSize === s.value
                     ? "border-accent bg-accent/10 text-accent"
                     : "hover:border-accent/50"
                 )}
               >
-                <span className="text-lg font-bold">{s.label}</span>
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-sm font-bold">{s.label}</span>
+                <span className="text-[9px] text-muted-foreground">
                   {s.sub}
                 </span>
               </button>
@@ -148,7 +231,7 @@ export default function GamePlayPage() {
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: 0.1 }}
+          transition={{ duration: 0.25, delay: 0.12 }}
           className="flex flex-col gap-3 rounded-2xl border bg-card p-5"
         >
           <div className="flex items-center gap-2">
