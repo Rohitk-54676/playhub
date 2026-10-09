@@ -3,8 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { startBingoGame } from "@/lib/bingo/engine";
 import { startDotsGame } from "@/lib/dots/engine";
+import { startTicTacToeGame } from "@/lib/tictactoe/engine";
 
-// POST /api/rooms/[code]/start — host-only, starts the game
+// POST /api/rooms/[code]/start
 export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ code: string }> }
@@ -35,19 +36,33 @@ export async function POST(
     if (room.status !== "lobby") {
       return NextResponse.json({ error: "Already started" }, { status: 409 });
     }
-    if (room.players.length < 2) {
-      return NextResponse.json(
-        { error: "Need at least 2 players" },
-        { status: 400 }
-      );
-    }
 
-        if (room.gameId === "dots-and-boxes") {
+    if (room.gameId === "tic-tac-toe") {
+      if (room.players.length !== 2) {
+        return NextResponse.json(
+          { error: "Need exactly 2 players" },
+          { status: 400 }
+        );
+      }
+      await startTicTacToeGame(room.id);
+    } else if (room.gameId === "dots-and-boxes") {
+      if (room.players.length < 2) {
+        return NextResponse.json(
+          { error: "Need at least 2 players" },
+          { status: 400 }
+        );
+      }
       const stateObj = (room.state as { size?: number } | null) ?? {};
       const raw = stateObj.size ?? 5;
       const size = [4, 5, 6, 7, 8].includes(raw) ? raw : 5;
       await startDotsGame(room.id, size);
     } else {
+      if (room.players.length < 2) {
+        return NextResponse.json(
+          { error: "Need at least 2 players" },
+          { status: 400 }
+        );
+      }
       await startBingoGame(room.id);
     }
 

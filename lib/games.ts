@@ -32,7 +32,7 @@ export const GAMES: GameMeta[] = [
     avgTime: "~1 min",
     description: "Classic 3×3. First to 3 in a row wins.",
     color: "from-blue-500 to-cyan-500",
-    available: false,
+    available: true,
   },
       {
     id: "dots-and-boxes",

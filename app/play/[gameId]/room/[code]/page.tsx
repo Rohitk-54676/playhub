@@ -7,6 +7,7 @@ import { useRoom } from "@/hooks/useRoom";
 import { RoomLobby } from "@/components/room/RoomLobby";
 import { BingoGame } from "@/components/bingo/BingoGame";
 import { DotsGame } from "@/components/dots/DotsGame";
+import { TicTacToeGame } from "@/components/tictactoe/TicTacToeGame";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/hooks/useUser";
 import { toast } from "sonner";
@@ -48,7 +49,7 @@ export default function RoomPage() {
     );
   }
 
-    if (room.gameId && room.gameId !== gameId) {
+  if (room.gameId && room.gameId !== gameId) {
     router.replace(`/play/${room.gameId}/room/${room.code}`);
     return (
       <div className="flex h-[60vh] items-center justify-center">
@@ -74,6 +75,16 @@ export default function RoomPage() {
     display_name: p.display_name,
     avatar_url: p.avatar_url,
   }));
+
+  if (gameId === "tic-tac-toe") {
+    return (
+      <TicTacToeGame
+        roomCode={room.code}
+        currentUserId={user.id}
+        hostId={room.hostId}
+      />
+    );
+  }
 
   if (gameId === "dots-and-boxes") {
     return (
