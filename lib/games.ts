@@ -45,6 +45,17 @@ export const GAMES: GameMeta[] = [
     color: "from-orange-500 to-red-500",
     available: true,
   },
+    {
+    id: "uno",
+    name: "Uno",
+    icon: "🎴",
+    minPlayers: 2,
+    maxPlayers: 6,
+    avgTime: "5–15 min",
+    description: "Classic card game. Match colors, play actions, call UNO. Last one standing loses.",
+    color: "from-red-500 to-yellow-500",
+    available: true,
+  },
 ];
 
 export function getGame(id: string): GameMeta | undefined {

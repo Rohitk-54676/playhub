@@ -37,7 +37,19 @@ export async function POST(
       return NextResponse.json({ error: "Already started" }, { status: 409 });
     }
 
-    if (room.gameId === "tic-tac-toe") {
+    if (room.gameId === "uno") {
+      if (room.players.length < 2) {
+        return NextResponse.json(
+          { error: "Need at least 2 players" },
+          { status: 400 }
+        );
+      }
+      // Uno client drives state — server just flips status
+      await prisma.room.update({
+        where: { id: room.id },
+        data: { status: "playing" },
+      });
+    } else if (room.gameId === "tic-tac-toe") {
       if (room.players.length !== 2) {
         return NextResponse.json(
           { error: "Need exactly 2 players" },
