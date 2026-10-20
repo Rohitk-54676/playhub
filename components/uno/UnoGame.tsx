@@ -276,8 +276,7 @@ export function UnoGame({
     me !== undefined && me.hand.length === 1 && !me.calledUno && !me.finished;
 
   return (
-    <div className="relative flex h-screen flex-col overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-green-900 via-emerald-900 to-green-950" />
+    <div className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-gradient-to-b from-green-900 via-emerald-900 to-green-950">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(16,185,129,0.25),_transparent_70%)]" />
 
       <div className="relative z-10 flex h-full flex-col">
@@ -314,8 +313,8 @@ export function UnoGame({
           </div>
         )}
 
-        {/* Table */}
-        <div className="flex-1 overflow-hidden">
+        {/* Table Area */}
+        <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden">
           <UnoTable
             state={state}
             myPlayerId={currentUserId}
@@ -338,7 +337,7 @@ export function UnoGame({
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={handleCallUno}
-            className="fixed bottom-24 right-4 z-[100] flex h-20 w-20 items-center justify-center rounded-full bg-red-600 text-base font-black text-white shadow-2xl ring-4 ring-red-400/50"
+            className="fixed bottom-32 right-4 z-[100] flex h-20 w-20 items-center justify-center rounded-full bg-red-600 text-base font-black text-white shadow-2xl ring-4 ring-red-400/50"
           >
             UNO!
           </motion.button>
@@ -349,7 +348,7 @@ export function UnoGame({
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="shrink-0 px-3 pb-2"
+            className="z-40 shrink-0 px-3 pb-2"
           >
             <div className="mx-auto flex max-w-md flex-col items-center gap-2 rounded-2xl border-2 border-red-500/50 bg-red-500/10 p-3 backdrop-blur">
               <p className="text-xs font-medium text-white">
@@ -382,7 +381,7 @@ export function UnoGame({
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="shrink-0 px-3 pb-2"
+            className="z-40 shrink-0 px-3 pb-2"
           >
             <div className="mx-auto flex max-w-md items-center justify-between gap-3 rounded-2xl border border-accent/50 bg-accent/10 p-3 backdrop-blur">
               <p className="text-xs font-medium text-white">
@@ -400,9 +399,8 @@ export function UnoGame({
           </motion.div>
         )}
 
-        {/* Hand */}
-                {/* Hand */}
-        <div className="shrink-0 max-h-[180px] overflow-hidden bg-gradient-to-t from-black/40 to-transparent pt-2">
+        {/* Hand Area - Fixed at bottom, only horizontal scroll */}
+        <div className="z-40 shrink-0 overflow-hidden bg-gradient-to-t from-black/60 to-transparent pb-safe pt-2">
           <UnoHand
             state={state}
             myPlayerId={currentUserId}
@@ -412,7 +410,7 @@ export function UnoGame({
         </div>
       </div>
 
-      {/* Action log */}
+      {/* Action log — hidden on mobile via ActionLog component */}
       <div className="absolute right-3 top-16 z-20">
         <ActionLog entries={log} />
       </div>

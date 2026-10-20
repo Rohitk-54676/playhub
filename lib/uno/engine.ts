@@ -17,9 +17,6 @@ import type {
 
 const HAND_SIZE = 7;
 
-/**
- * Start a new Uno game for the given player ids (in turn order).
- */
 export function startUnoGame(playerIds: string[]): UnoGameState {
   if (playerIds.length < 2 || playerIds.length > 6) {
     throw new Error("Uno requires 2–6 players");
@@ -30,7 +27,6 @@ export function startUnoGame(playerIds: string[]): UnoGameState {
 
   const drawPile = shuffle(remaining);
 
-  // Deal 7 cards to each player
   const players: UnoPlayer[] = playerIds.map((id) => ({
     id,
     hand: [],
@@ -49,7 +45,6 @@ export function startUnoGame(playerIds: string[]): UnoGameState {
 
   const finalDrawPile = drawPile.slice(deckIdx);
 
-  // Determine starting color: if starting card is Wild, random color
   let startingColor: UnoColor;
   if (startingCard.color === "wild") {
     const colors: UnoColor[] = ["red", "yellow", "green", "blue"];
@@ -58,7 +53,7 @@ export function startUnoGame(playerIds: string[]): UnoGameState {
     startingColor = startingCard.color;
   }
 
-    return {
+  return {
     players,
     drawPile: finalDrawPile,
     discardPile: [startingCard],
@@ -72,14 +67,10 @@ export function startUnoGame(playerIds: string[]): UnoGameState {
     wildDrawFourChallengeOpen: false,
     lastPlayedBy: null,
     winner: null,
-    turnStartedAt: new Date().toISOString(), // ← add this
+    turnStartedAt: new Date().toISOString(),
   };
 }
 
-/**
- * Play a card from the current player's hand.
- * Validates playability, applies effect, advances turn.
- */
 export function playCard(
   state: UnoGameState,
   playerId: string,
@@ -102,7 +93,6 @@ export function playCard(
 
   const top = getTopCard(state);
 
-  // If there's a pending draw on this player, they must accept it first
   if (state.pendingType && state.pendingPlayerId === playerId) {
     return {
       newState: state,
@@ -110,7 +100,6 @@ export function playCard(
     };
   }
 
-  // Wild cards require a chosen color
   if (isWild(card)) {
     if (!chosenColor) {
       return { newState: state, error: "Must choose a color for Wild" };
@@ -120,19 +109,15 @@ export function playCard(
     }
   }
 
-  // Validate playability
   if (!canPlayCard(card, top, state.currentColor, currentPlayer.hand)) {
     return { newState: state, error: "Cannot play that card" };
   }
 
-  // Remove card from hand
   const newPlayers = state.players.map((p) => ({
     ...p,
     hand: p.id === playerId ? p.hand.filter((c) => c.id !== cardId) : [...p.hand],
   }));
 
-  // Reset the player's UNO flag whenever they play — they must re-call UNO
-  // if they end up at 1 card again.
   const playingPlayer = newPlayers.find((p) => p.id === playerId);
   if (playingPlayer) {
     playingPlayer.calledUno = false;
@@ -146,12 +131,11 @@ export function playCard(
     currentColor: isWild(card) ? chosenColor! : (card.color as UnoColor),
   };
 
-  // Handle action effects
   switch (card.type) {
     case "skip": {
       newState = {
         ...newState,
-        currentPlayerIndex: skipBy(newState, 1),
+        currentPlayerIndex: advanceBy(newState, 2), // Skips the next active player
       };
       break;
     }
@@ -160,7 +144,7 @@ export function playCard(
         newState = {
           ...newState,
           direction: (newState.direction * -1) as -1 | 1,
-          currentPlayerIndex: skipBy(newState, 1),
+          currentPlayerIndex: advanceBy(newState, 2), // Acts as skip
         };
       } else {
         newState = {
@@ -172,7 +156,6 @@ export function playCard(
       break;
     }
     case "draw_two": {
-      // +2 draws 2 immediately for next player, turn passes to the one after them
       const nextIdx = advanceBy(newState, 1);
       const next = newState.players[nextIdx];
       const drawn = drawCards(newState, next.id, 2);
@@ -182,12 +165,11 @@ export function playCard(
         pendingType: null,
         pendingPlayerId: null,
         wildDrawFourChallengeOpen: false,
-        currentPlayerIndex: advanceBy(drawn, 2),
+        currentPlayerIndex: advanceBy(drawn, 2), // Skip the penalized player
       };
       break;
     }
     case "wild_draw_four": {
-      // +4 opens a challenge window for the next player
       const nextIdx = advanceBy(newState, 1);
       const next = newState.players[nextIdx];
       newState = {
@@ -210,22 +192,18 @@ export function playCard(
       break;
     }
   }
+
   newState = {
     ...newState,
     turnStartedAt: new Date().toISOString(),
   };
 
-  // Check for finish
   const { state: finished } = checkFinish(newState);
   newState = finished;
 
   return { newState };
 }
 
-/**
- * Player draws a card. Returns whether the drawn card is playable.
- * Turn is NOT auto-ended — client decides (play or pass).
- */
 export function drawCard(
   state: UnoGameState,
   playerId: string
@@ -270,9 +248,6 @@ export function drawCard(
   };
 }
 
-/**
- * End the current player's turn without playing (after drawing a card).
- */
 export function endTurn(state: UnoGameState, playerId: string): UnoGameState {
   const currentPlayer = state.players[state.currentPlayerIndex];
   if (currentPlayer.id !== playerId) return state;
@@ -284,9 +259,6 @@ export function endTurn(state: UnoGameState, playerId: string): UnoGameState {
   };
 }
 
-/**
- * Player calls UNO after reaching 1 card.
- */
 export function callUno(
   state: UnoGameState,
   playerId: string
@@ -303,9 +275,6 @@ export function callUno(
   };
 }
 
-/**
- * Catch a player who has 1 card and didn't call UNO.
- */
 export function catchUno(
   state: UnoGameState,
   targetPlayerId: string
@@ -330,9 +299,6 @@ export function catchUno(
   };
 }
 
-/**
- * Current player accepts the pending draw.
- */
 export function acceptPendingDraw(
   state: UnoGameState,
   playerId: string
@@ -343,7 +309,7 @@ export function acceptPendingDraw(
   const drawn = drawCards(state, playerId, count);
   const nextIdx = advanceBy(drawn, 1);
 
-    return {
+  return {
     ...drawn,
     pendingDraw: 0,
     pendingType: null,
@@ -354,9 +320,6 @@ export function acceptPendingDraw(
   };
 }
 
-/**
- * Next player challenges a Wild Draw Four.
- */
 export function challengeWildDrawFour(
   state: UnoGameState,
   challengerId: string
@@ -396,17 +359,15 @@ export function challengeWildDrawFour(
   let drawnState: UnoGameState;
 
   if (hadMatchingColor) {
-    // Player was guilty — they draw 4
     drawnState = drawCards(state, playerWhoPlayed, 4);
   } else {
-    // Challenger was wrong — they draw 6
     drawnState = drawCards(state, challengerId, 6);
   }
 
   const nextIdx = advanceBy(drawnState, 1);
 
   return {
-        newState: {
+    newState: {
       ...drawnState,
       pendingDraw: 0,
       pendingType: null,
@@ -420,13 +381,24 @@ export function challengeWildDrawFour(
   };
 }
 
-/** Helpers */
-
+/** 
+ * The most important fix: advanceBy SKIPS finished players.
+ * If a player has 0 cards, they are effectively invisible to the turn engine.
+ */
 function advanceBy(state: UnoGameState, steps: number): number {
   const n = state.players.length;
   let idx = state.currentPlayerIndex;
-  for (let i = 0; i < steps; i++) {
+  let moved = 0;
+
+  // Safety guard to prevent infinite loops if everyone is finished
+  let loops = 0;
+
+  while (moved < steps && loops < n * steps + 10) {
     idx = (idx + state.direction + n) % n;
+    if (!state.players[idx].finished) {
+      moved++;
+    }
+    loops++;
   }
   return idx;
 }
