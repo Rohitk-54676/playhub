@@ -60,8 +60,8 @@ export function UnoHand({ state, myPlayerId, canPlay, onPlayCard }: Props) {
       </div>
 
       {/* Cards */}
-      <div className="w-full overflow-x-auto pb-1">
-        <div className="flex min-w-full items-end justify-center gap-1.5 px-3 py-1">
+      <div className="w-full overflow-x-auto pb-1" style={{ touchAction: "pan-x" }}>
+  <div className="flex min-w-min items-end justify-start gap-1.5 px-3 py-1 sm:justify-center">
           {me.hand.map((card, i) => {
             const playable =
               canPlay &&

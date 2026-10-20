@@ -401,7 +401,8 @@ export function UnoGame({
         )}
 
         {/* Hand */}
-        <div className="shrink-0 bg-gradient-to-t from-black/40 to-transparent pt-2">
+                {/* Hand */}
+        <div className="shrink-0 max-h-[180px] overflow-hidden bg-gradient-to-t from-black/40 to-transparent pt-2">
           <UnoHand
             state={state}
             myPlayerId={currentUserId}
